@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package testservice;
+option go_package = "testservice";
+
+service Test {
+  rpc DoThing(ThingReq) returns (ThingRes);
+}
+
+message ThingReq {
+  string name = 1;
+}
+
+message ThingRes {
+  string response = 1;
+}

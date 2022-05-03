@@ -1,0 +1,37 @@
+before:
+  hooks:
+    - go mod download
+builds:
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/panurge
+    goos:
+      - linux
+      - windows
+      - darwin
+archives:
+  - name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+checksum:
+  name_template: 'checksums.txt'
+blobs:
+  - provider: s3
+    bucket: im-saas-build-public-artifacts
+    folder: "tools/panurge/{{.Version}}"
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+brews:
+  - tap:
+      owner: Infomaker
+      name: homebrew-core
+    folder: Formula
+    homepage: https://bitbucket.org/infomaker/panurge/
+    description: Panurge utility
+    url_template: "https://im-saas-build-public-artifacts.s3-eu-west-1.amazonaws.com/tools/panurge/{{ .Version }}/{{ .ArtifactName }}"
+release:
+  disable: true
