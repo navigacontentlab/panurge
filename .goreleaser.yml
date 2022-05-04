@@ -13,10 +13,10 @@ archives:
   - name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 checksum:
   name_template: 'checksums.txt'
-blobs:
-  - provider: s3
-    bucket: im-saas-build-public-artifacts
-    folder: "tools/panurge/{{.Version}}"
+release:
+  github:
+    owner: navigacontentlab
+    name: panurge
 snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
@@ -29,9 +29,10 @@ brews:
   - tap:
       owner: Infomaker
       name: homebrew-core
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     folder: Formula
-    homepage: https://bitbucket.org/infomaker/panurge/
+    homepage: https://github.com/navigacontentlab/panurge
     description: Panurge utility
-    url_template: "https://im-saas-build-public-artifacts.s3-eu-west-1.amazonaws.com/tools/panurge/{{ .Version }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/navigacontentlab/panurge/releases/{{ .Tag }}/{{ .ArtifactName }}"
 release:
   disable: true
