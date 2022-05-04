@@ -33,4 +33,4 @@ brews:
     folder: Formula
     homepage: https://github.com/navigacontentlab/panurge
     description: Panurge utility
-    url_template: "https://github.com/navigacontentlab/panurge/releases/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/navigacontentlab/panurge/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
