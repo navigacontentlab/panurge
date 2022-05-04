@@ -34,5 +34,3 @@ brews:
     homepage: https://github.com/navigacontentlab/panurge
     description: Panurge utility
     url_template: "https://github.com/navigacontentlab/panurge/releases/{{ .Tag }}/{{ .ArtifactName }}"
-release:
-  disable: true
