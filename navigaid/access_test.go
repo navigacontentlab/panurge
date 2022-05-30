@@ -11,8 +11,6 @@ import (
 	"github.com/navigacontentlab/panurge/navigaid"
 )
 
-const testKeyID = "a34db85a-3f67-42e0-94f6-17694fc85fd9"
-
 func TestAccessTokenService(t *testing.T) {
 	expectedTokenTTL := 600
 	opts := navigaid.MockServerOptions{
