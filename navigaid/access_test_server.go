@@ -13,25 +13,27 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 )
 
 type MockServer struct {
-	Server     *httptest.Server
-	PrivateKey *rsa.PrivateKey
-	Client     *http.Client
+	Server       *httptest.Server
+	PrivateKey   *rsa.PrivateKey
+	PrivateKeyId string
+	Client       *http.Client
 }
 
 type MockServerOptions struct {
-	Claims Claims
-	TTL    int `json:"ttl"`
+	Claims          Claims
+	TTL             int    `json:"ttl"`
+	PrivatePemKey   string `json:"private_pem_key"`
+	PrivatePemKeyId string `json:"private_pem_key_id"`
 }
-
-const testKeyID = "a34db85a-3f67-42e0-94f6-17694fc85fd9"
 
 // This mock server mocks two endpoints, one for creating new access tokens
 // and another one for providing keys.
 func NewMockServer(opts MockServerOptions) (*MockServer, error) {
-	mux, privateKey, err := NewMockService(opts)
+	mux, privateKey, privateKeyId, err := NewMockService(opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create access token mock server: %w", err)
 	}
@@ -39,9 +41,10 @@ func NewMockServer(opts MockServerOptions) (*MockServer, error) {
 	srv := httptest.NewServer(mux)
 
 	mockServer := MockServer{
-		Server:     srv,
-		Client:     srv.Client(),
-		PrivateKey: privateKey,
+		Server:       srv,
+		Client:       srv.Client(),
+		PrivateKey:   privateKey,
+		PrivateKeyId: privateKeyId,
 	}
 
 	return &mockServer, nil
@@ -49,12 +52,21 @@ func NewMockServer(opts MockServerOptions) (*MockServer, error) {
 
 // This mock service mocks two endpoints, one for creating new access
 // tokens and another one for providing keys.
-func NewMockService(opts MockServerOptions) (*http.ServeMux, *rsa.PrivateKey, error) {
+func NewMockService(opts MockServerOptions) (*http.ServeMux, *rsa.PrivateKey, string, error) {
 	mux := http.NewServeMux()
 
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	var privateKey *rsa.PrivateKey
+	var privateKeyId string
+	var err error
+
+	if opts.PrivatePemKey != "" {
+		privateKey, privateKeyId, err = parsePrivatePemKeyFromOpts(opts)
+	} else {
+		privateKey, privateKeyId, err = generatePrivateKey()
+	}
+
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 
 	mux.HandleFunc("/v1/token", func(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +99,7 @@ func NewMockService(opts MockServerOptions) (*http.ServeMux, *rsa.PrivateKey, er
 
 		token := jwt.NewWithClaims(jwt.SigningMethodRS512, jwtClaims)
 
-		token.Header["kid"] = testKeyID
+		token.Header["kid"] = privateKeyId
 
 		signed, err := token.SignedString(privateKey)
 		if err != nil {
@@ -127,7 +139,7 @@ func NewMockService(opts MockServerOptions) (*http.ServeMux, *rsa.PrivateKey, er
 					"e": "AQAB"
 				}],
 				"maxTokenTTL": 604800
-		}`, testKeyID, n)
+		}`, privateKeyId, n)
 
 		_, err = io.WriteString(w, keys)
 		if err != nil {
@@ -135,7 +147,7 @@ func NewMockService(opts MockServerOptions) (*http.ServeMux, *rsa.PrivateKey, er
 		}
 	})
 
-	return mux, privateKey, nil
+	return mux, privateKey, privateKeyId, nil
 }
 
 func updateClaimsWithHeaderSpecifiedClaims(req *http.Request, jwtClaims jwt.MapClaims) error {
@@ -153,4 +165,30 @@ func updateClaimsWithHeaderSpecifiedClaims(req *http.Request, jwtClaims jwt.MapC
 
 func hasHeaderSpecifiedClaims(req *http.Request) bool {
 	return req.Header.Get("X-NAVIGA-ID-MOCK-CLAIMS") != ""
+}
+
+func parsePrivatePemKeyFromOpts(opts MockServerOptions) (*rsa.PrivateKey, string, error) {
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(opts.PrivatePemKey))
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	return privateKey, opts.PrivatePemKeyId, nil
+}
+
+func generatePrivateKey() (*rsa.PrivateKey, string, error) {
+	generatedPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, "", err
+	}
+
+	generatedPrivateKeyUuid, err := uuid.NewUUID()
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	return generatedPrivateKey, generatedPrivateKeyUuid.String(), err
+
 }

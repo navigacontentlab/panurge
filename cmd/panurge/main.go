@@ -63,7 +63,7 @@ func navigaIDMock(c *cli.Context) error {
 		}
 	}
 
-	handler, _, err := navigaid.NewMockService(opts)
+	handler, _, _, err := navigaid.NewMockService(opts)
 	if err != nil {
 		return fmt.Errorf("failed to create mock service: %w", err)
 	}
