@@ -30,21 +30,27 @@ type MockServerOptions struct {
 	PrivatePemKeyId string `json:"private_pem_key_id"`
 }
 
+type MockService struct {
+	Mux        *http.ServeMux
+	PrivateKey *rsa.PrivateKey
+	keyID      string
+}
+
 // This mock server mocks two endpoints, one for creating new access tokens
 // and another one for providing keys.
 func NewMockServer(opts MockServerOptions) (*MockServer, error) {
-	mux, privateKey, privateKeyId, err := NewMockService(opts)
+	mockService, err := NewMockService(opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create access token mock server: %w", err)
 	}
 
-	srv := httptest.NewServer(mux)
+	srv := httptest.NewServer(mockService.Mux)
 
 	mockServer := MockServer{
 		Server:       srv,
 		Client:       srv.Client(),
-		PrivateKey:   privateKey,
-		PrivateKeyId: privateKeyId,
+		PrivateKey:   mockService.PrivateKey,
+		PrivateKeyId: mockService.keyID,
 	}
 
 	return &mockServer, nil
@@ -52,7 +58,10 @@ func NewMockServer(opts MockServerOptions) (*MockServer, error) {
 
 // This mock service mocks two endpoints, one for creating new access
 // tokens and another one for providing keys.
-func NewMockService(opts MockServerOptions) (*http.ServeMux, *rsa.PrivateKey, string, error) {
+func NewMockService(opts MockServerOptions) (MockService, error) {
+
+	var mockService MockService
+
 	mux := http.NewServeMux()
 
 	var privateKey *rsa.PrivateKey
@@ -66,7 +75,7 @@ func NewMockService(opts MockServerOptions) (*http.ServeMux, *rsa.PrivateKey, st
 	}
 
 	if err != nil {
-		return nil, nil, "", err
+		return mockService, err
 	}
 
 	mux.HandleFunc("/v1/token", func(w http.ResponseWriter, r *http.Request) {
@@ -147,7 +156,11 @@ func NewMockService(opts MockServerOptions) (*http.ServeMux, *rsa.PrivateKey, st
 		}
 	})
 
-	return mux, privateKey, privateKeyId, nil
+	mockService.Mux = mux
+	mockService.PrivateKey = privateKey
+	mockService.keyID = privateKeyId
+
+	return mockService, nil
 }
 
 func updateClaimsWithHeaderSpecifiedClaims(req *http.Request, jwtClaims jwt.MapClaims) error {

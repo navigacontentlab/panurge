@@ -63,7 +63,8 @@ func navigaIDMock(c *cli.Context) error {
 		}
 	}
 
-	handler, _, _, err := navigaid.NewMockService(opts)
+	mockService, err := navigaid.NewMockService(opts)
+
 	if err != nil {
 		return fmt.Errorf("failed to create mock service: %w", err)
 	}
@@ -71,7 +72,7 @@ func navigaIDMock(c *cli.Context) error {
 	var server http.Server
 
 	server.Addr = addr
-	server.Handler = handler
+	server.Handler = mockService.Mux
 
 	return server.ListenAndServe()
 }
