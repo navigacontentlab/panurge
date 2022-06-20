@@ -72,7 +72,7 @@ func navigaIDMock(c *cli.Context) error {
 	var server http.Server
 
 	server.Addr = addr
-	server.Handler = mockService.Mux
+	server.Handler = mockService
 
 	return server.ListenAndServe()
 }

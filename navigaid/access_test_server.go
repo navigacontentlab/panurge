@@ -36,6 +36,10 @@ type MockService struct {
 	keyID      string
 }
 
+func (ms MockService) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	ms.Mux.ServeHTTP(rw, r)
+}
+
 // This mock server mocks two endpoints, one for creating new access tokens
 // and another one for providing keys.
 func NewMockServer(opts MockServerOptions) (*MockServer, error) {
@@ -44,7 +48,7 @@ func NewMockServer(opts MockServerOptions) (*MockServer, error) {
 		return nil, fmt.Errorf("failed to create access token mock server: %w", err)
 	}
 
-	srv := httptest.NewServer(mockService.Mux)
+	srv := httptest.NewServer(mockService)
 
 	mockServer := MockServer{
 		Server:       srv,
