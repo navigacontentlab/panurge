@@ -11,8 +11,6 @@ import (
 	"github.com/navigacontentlab/panurge/navigaid"
 )
 
-const testKeyID = "a34db85a-3f67-42e0-94f6-17694fc85fd9"
-
 func TestAccessTokenService(t *testing.T) {
 	expectedTokenTTL := 600
 	opts := navigaid.MockServerOptions{
@@ -94,7 +92,7 @@ func TestAccessTokenService(t *testing.T) {
 			"jti": "da20dda4-c8ce-4dac-98dc-435f2f0128f1",
 		})
 
-		token.Header["kid"] = testKeyID
+		token.Header["kid"] = "dummy-kid"
 
 		signed, err := token.SignedString(privateKey)
 		if err != nil {

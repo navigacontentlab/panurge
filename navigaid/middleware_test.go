@@ -31,6 +31,7 @@ func TestHTTPMiddleware(t *testing.T) {
 
 	server := mockServer.Server
 	signKey := mockServer.PrivateKey
+	signKeyId := mockServer.PrivateKeyId
 
 	t.Cleanup(server.Close)
 
@@ -74,7 +75,7 @@ func TestHTTPMiddleware(t *testing.T) {
 	t.Cleanup(apiServer.Close)
 
 	t.Run("BondAccess", func(t *testing.T) {
-		bondToken := getAccessToken(t, signKey, navigaid.Claims{
+		bondToken := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
 			StandardClaims: jwt.StandardClaims{
 				Subject:   "hms-govt://agent/007",
 				ExpiresAt: time.Now().AddDate(2, 0, 0).Unix(),
@@ -106,7 +107,7 @@ func TestHTTPMiddleware(t *testing.T) {
 	})
 
 	t.Run("CleanerAccess", func(t *testing.T) {
-		token := getAccessToken(t, signKey, navigaid.Claims{
+		token := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
 			StandardClaims: jwt.StandardClaims{
 				Subject:   "hms-govt://cleaner/101",
 				ExpiresAt: time.Now().AddDate(2, 0, 0).Unix(),
@@ -128,7 +129,7 @@ func TestHTTPMiddleware(t *testing.T) {
 	})
 
 	t.Run("MooreAccess", func(t *testing.T) {
-		bondToken := getAccessToken(t, signKey, navigaid.Claims{
+		bondToken := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
 			StandardClaims: jwt.StandardClaims{
 				Subject:   "hms-govt://agent/007/roger-moore",
 				ExpiresAt: time.Date(1985, time.May, 23, 0, 0, 0, 0, time.UTC).Unix(),
@@ -191,13 +192,13 @@ func getWithToken(t *testing.T, client *http.Client, url string, token string) *
 	return res
 }
 
-func getAccessToken(t *testing.T, signKey *rsa.PrivateKey, claims navigaid.Claims) string {
+func getAccessToken(t *testing.T, signKey *rsa.PrivateKey, keyId string, claims navigaid.Claims) string {
 	t.Helper()
 
 	claims.TokenType = navigaid.TokenTypeAccessToken
 
 	token := jwt.NewWithClaims(jwt.SigningMethodRS512, claims)
-	token.Header["kid"] = testKeyID
+	token.Header["kid"] = keyId
 
 	accessToken, err := token.SignedString(signKey)
 	if err != nil {
