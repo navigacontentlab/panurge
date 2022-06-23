@@ -49,7 +49,7 @@ func AddUserAnnotation(ctx context.Context, user string) {
 	ann.SetUser(user)
 }
 
-func AddAnnotation(ctx context.Context, key string, value interface{}) {
+func AddAnnotation[T AllowedAnnotationTypes](ctx context.Context, key string, value T) {
 	ann, ok := ctx.Value(&annotationsKey).(*ContextAnnotations)
 	if !ok {
 		return
@@ -202,4 +202,8 @@ func copyInterfaceMap(source map[string]interface{}) map[string]interface{} {
 	}
 
 	return annotations
+}
+
+type AllowedAnnotationTypes interface {
+	bool | int | uint | float32 | float64 | string
 }

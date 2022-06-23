@@ -1,6 +1,6 @@
 module github.com/navigacontentlab/panurge
 
-go 1.17
+go 1.18
 
 require (
 	github.com/aws/aws-lambda-go v1.31.1
