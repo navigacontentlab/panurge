@@ -91,15 +91,16 @@ func (err ErrNoToken) Error() string {
 }
 
 func getAuthToken(header http.Header) (string, error) {
-	bearerToken := header.Get("Authorization")
+	auth := header.Get("Authorization")
 
-	if !hasBearer(bearerToken) {
+	authType, token, _ := strings.Cut(auth, " ")
+	if token == "" {
 		return "", ErrNoToken{}
 	}
 
-	return bearerToken[7:], nil
-}
+	if strings.ToLower(authType) != "bearer" {
+		return "", ErrNoToken{}
+	}
 
-func hasBearer(authHeader string) bool {
-	return strings.HasPrefix(strings.ToLower(authHeader), "bearer")
+	return token, nil
 }
