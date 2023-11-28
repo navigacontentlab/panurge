@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/navigacontentlab/panurge/navigaid"
 )
 
@@ -55,13 +55,13 @@ func TestAccessTokenService(t *testing.T) {
 	if err != nil {
 		t.Errorf("failed to parse token")
 	}
-
-	actualTokenTTL := int(claims.ExpiresAt - claims.IssuedAt)
-	if actualTokenTTL != expectedTokenTTL {
-		t.Errorf("expected token TTL to be %d but got %d", expectedTokenTTL, actualTokenTTL)
+	fmt.Printf("claims: %v\n", claims)
+	actualTokenTTL := claims.ExpiresAt.Time.Sub(claims.IssuedAt.Time)
+	if actualTokenTTL.Seconds() != float64(expectedTokenTTL) {
+		t.Errorf("expected token TTL to be %f but got %f", float64(expectedTokenTTL), actualTokenTTL.Seconds())
 	}
 
-	if actualTokenTTL != resp.ExpiresIn {
+	if actualTokenTTL.Seconds() != float64(resp.ExpiresIn) {
 		t.Errorf("expected token TTL (%d) to match token response ExpiresIn (%d)", actualTokenTTL, resp.ExpiresIn)
 	}
 

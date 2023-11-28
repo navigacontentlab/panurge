@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/navigacontentlab/panurge/navigaid"
 )
 
@@ -78,7 +78,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		bondToken := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
 			StandardClaims: jwt.StandardClaims{
 				Subject:   "hms-govt://agent/007",
-				ExpiresAt: time.Now().AddDate(2, 0, 0).Unix(),
+				ExpiresAt: &jwt.Time{Time: time.Now().AddDate(2, 0, 0)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{
@@ -110,7 +110,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		token := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
 			StandardClaims: jwt.StandardClaims{
 				Subject:   "hms-govt://cleaner/101",
-				ExpiresAt: time.Now().AddDate(2, 0, 0).Unix(),
+				ExpiresAt: &jwt.Time{Time: time.Now().AddDate(2, 0, 0)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{
@@ -132,7 +132,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		bondToken := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
 			StandardClaims: jwt.StandardClaims{
 				Subject:   "hms-govt://agent/007/roger-moore",
-				ExpiresAt: time.Date(1985, time.May, 23, 0, 0, 0, 0, time.UTC).Unix(),
+				ExpiresAt: &jwt.Time{Time: time.Date(1985, time.May, 23, 0, 0, 0, 0, time.UTC)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{

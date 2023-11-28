@@ -1,6 +1,6 @@
 package navigaid
 
-import "github.com/dgrijalva/jwt-go"
+import "github.com/dgrijalva/jwt-go/v4"
 
 // Known token types
 const (
@@ -89,8 +89,8 @@ func (p PermissionsClaim) PermissionsInUnit(unit string) map[string]bool {
 	return m
 }
 
-func (c Claims) Valid() error {
-	err := c.StandardClaims.Valid()
+func (c Claims) Valid(h *jwt.ValidationHelper) error {
+	err := c.StandardClaims.Valid(h)
 	if err != nil {
 		return err
 	}
