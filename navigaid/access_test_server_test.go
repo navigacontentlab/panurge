@@ -2,7 +2,7 @@ package navigaid_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -115,7 +115,7 @@ func TestNavigaIdMockServiceWithCustomPrivateKey(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 
 		if err != nil {
 			t.Fatal(err)
@@ -140,7 +140,7 @@ func TestNavigaIdMockServiceWithCustomPrivateKey(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 
 		if err != nil {
 			t.Fatal(err)

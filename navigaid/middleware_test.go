@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -95,7 +95,7 @@ func TestHTTPMiddleware(t *testing.T) {
 			t.Fatalf("server responded with: %s", res.Status)
 		}
 
-		recievedMsg, err := ioutil.ReadAll(res.Body)
+		recievedMsg, err := io.ReadAll(res.Body)
 		if err != nil {
 			t.Fatalf("failed to read response: %v", err)
 		}
