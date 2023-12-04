@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/navigacontentlab/panurge/navigaid"
 )
 
@@ -19,7 +19,7 @@ func TestHTTPMiddleware(t *testing.T) {
 	opts := navigaid.MockServerOptions{
 		Claims: navigaid.Claims{
 			Org: "sampleorg",
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "75255a64-58f8-4b25-b102-af1304641096",
 			},
 		},
@@ -76,9 +76,9 @@ func TestHTTPMiddleware(t *testing.T) {
 
 	t.Run("BondAccess", func(t *testing.T) {
 		bondToken := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject:   "hms-govt://agent/007",
-				ExpiresAt: &jwt.Time{Time: time.Now().AddDate(2, 0, 0)},
+				ExpiresAt: &jwt.NumericDate{Time: time.Now().AddDate(2, 0, 0)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{
@@ -108,9 +108,9 @@ func TestHTTPMiddleware(t *testing.T) {
 
 	t.Run("CleanerAccess", func(t *testing.T) {
 		token := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject:   "hms-govt://cleaner/101",
-				ExpiresAt: &jwt.Time{Time: time.Now().AddDate(2, 0, 0)},
+				ExpiresAt: &jwt.NumericDate{Time: time.Now().AddDate(2, 0, 0)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{
@@ -130,9 +130,9 @@ func TestHTTPMiddleware(t *testing.T) {
 
 	t.Run("MooreAccess", func(t *testing.T) {
 		bondToken := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject:   "hms-govt://agent/007/roger-moore",
-				ExpiresAt: &jwt.Time{Time: time.Date(1985, time.May, 23, 0, 0, 0, 0, time.UTC)},
+				ExpiresAt: &jwt.NumericDate{Time: time.Date(1985, time.May, 23, 0, 0, 0, 0, time.UTC)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{

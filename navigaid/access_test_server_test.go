@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/navigacontentlab/panurge/navigaid"
 )
 
@@ -89,7 +89,7 @@ func TestNavigaIdMockServiceWithCustomPrivateKey(t *testing.T) {
 	opts := navigaid.MockServerOptions{
 		Claims: navigaid.Claims{
 			Org: "sampleorg",
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "75255a64-58f8-4b25-b102-af1304641096",
 			},
 			Permissions: navigaid.PermissionsClaim{},
