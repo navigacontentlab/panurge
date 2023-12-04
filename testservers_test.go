@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/navigacontentlab/panurge"
 	"github.com/navigacontentlab/panurge/internal/rpc/testservice"
 	"github.com/navigacontentlab/panurge/navigaid"
@@ -33,7 +33,7 @@ func TestServers__MetricsAndTracing(t *testing.T) {
 	opts := navigaid.MockServerOptions{
 		Claims: navigaid.Claims{
 			Org: "testorg",
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "75255a64-58f8-4b25-b102-af1304641096",
 			},
 		},

@@ -1,6 +1,6 @@
 package navigaid
 
-import "github.com/dgrijalva/jwt-go"
+import "github.com/golang-jwt/jwt/v4"
 
 // Known token types
 const (
@@ -11,7 +11,7 @@ const (
 // Claims contains information regarding what org and groups (and more), that
 // the claim belongs to.
 type Claims struct {
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 
 	Org         string           `json:"org"`
 	Groups      []string         `json:"groups"`
@@ -90,7 +90,7 @@ func (p PermissionsClaim) PermissionsInUnit(unit string) map[string]bool {
 }
 
 func (c Claims) Valid() error {
-	err := c.StandardClaims.Valid()
+	err := c.RegisteredClaims.Valid()
 	if err != nil {
 		return err
 	}

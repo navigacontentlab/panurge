@@ -8,13 +8,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v4"
 	"math/big"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/dgrijalva/jwt-go"
 )
 
 const defaultJwksTTL = 10 * time.Minute

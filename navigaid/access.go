@@ -3,7 +3,7 @@ package navigaid
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -68,7 +68,7 @@ func (ats *AccessTokenService) NewAccessToken(navigaIDToken string) (*AccessToke
 		return nil, err
 	}
 
-	bytes, err := ioutil.ReadAll(res.Body)
+	bytes, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}

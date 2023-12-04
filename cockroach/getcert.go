@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -96,7 +95,7 @@ func NewConnectionConfig(
 
 	certDir := opts.CertificateDirectory
 	if certDir == "" {
-		certDir, err = ioutil.TempDir("", user)
+		certDir, err = os.MkdirTemp("", user)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"failed to create temporary certificate directory: %w", err)
@@ -189,7 +188,7 @@ func (cc *ConnectionConfig) createCertDirectory() error {
 		"client." + cc.user + ".key": []byte(cc.credentials.Key),
 	}
 	for name, data := range files {
-		err := ioutil.WriteFile(
+		err := os.WriteFile(
 			filepath.Join(cc.certDir, name), data, 0600,
 		)
 		if err != nil {

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/navigacontentlab/panurge/navigaid"
 )
 
@@ -16,7 +16,7 @@ func TestAccessTokenService(t *testing.T) {
 	opts := navigaid.MockServerOptions{
 		Claims: navigaid.Claims{
 			Org: "sampleorg",
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "75255a64-58f8-4b25-b102-af1304641096",
 			},
 		},
@@ -49,19 +49,19 @@ func TestAccessTokenService(t *testing.T) {
 		t.Errorf("expected token to be valid, was invalid: %v", err)
 	}
 
-	var claims jwt.StandardClaims
+	var claims jwt.RegisteredClaims
 
 	_, _, err = new(jwt.Parser).ParseUnverified(resp.AccessToken, &claims)
 	if err != nil {
 		t.Errorf("failed to parse token")
 	}
-
-	actualTokenTTL := int(claims.ExpiresAt - claims.IssuedAt)
-	if actualTokenTTL != expectedTokenTTL {
-		t.Errorf("expected token TTL to be %d but got %d", expectedTokenTTL, actualTokenTTL)
+	fmt.Printf("claims: %v\n", claims)
+	actualTokenTTL := claims.ExpiresAt.Time.Sub(claims.IssuedAt.Time)
+	if actualTokenTTL.Seconds() != float64(expectedTokenTTL) {
+		t.Errorf("expected token TTL to be %f but got %f", float64(expectedTokenTTL), actualTokenTTL.Seconds())
 	}
 
-	if actualTokenTTL != resp.ExpiresIn {
+	if actualTokenTTL.Seconds() != float64(resp.ExpiresIn) {
 		t.Errorf("expected token TTL (%d) to match token response ExpiresIn (%d)", actualTokenTTL, resp.ExpiresIn)
 	}
 

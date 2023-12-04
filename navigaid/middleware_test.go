@@ -5,13 +5,13 @@ import (
 	"context"
 	"crypto/rsa"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/navigacontentlab/panurge/navigaid"
 )
 
@@ -19,7 +19,7 @@ func TestHTTPMiddleware(t *testing.T) {
 	opts := navigaid.MockServerOptions{
 		Claims: navigaid.Claims{
 			Org: "sampleorg",
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject: "75255a64-58f8-4b25-b102-af1304641096",
 			},
 		},
@@ -76,9 +76,9 @@ func TestHTTPMiddleware(t *testing.T) {
 
 	t.Run("BondAccess", func(t *testing.T) {
 		bondToken := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject:   "hms-govt://agent/007",
-				ExpiresAt: time.Now().AddDate(2, 0, 0).Unix(),
+				ExpiresAt: &jwt.NumericDate{Time: time.Now().AddDate(2, 0, 0)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{
@@ -95,7 +95,7 @@ func TestHTTPMiddleware(t *testing.T) {
 			t.Fatalf("server responded with: %s", res.Status)
 		}
 
-		recievedMsg, err := ioutil.ReadAll(res.Body)
+		recievedMsg, err := io.ReadAll(res.Body)
 		if err != nil {
 			t.Fatalf("failed to read response: %v", err)
 		}
@@ -108,9 +108,9 @@ func TestHTTPMiddleware(t *testing.T) {
 
 	t.Run("CleanerAccess", func(t *testing.T) {
 		token := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject:   "hms-govt://cleaner/101",
-				ExpiresAt: time.Now().AddDate(2, 0, 0).Unix(),
+				ExpiresAt: &jwt.NumericDate{Time: time.Now().AddDate(2, 0, 0)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{
@@ -130,9 +130,9 @@ func TestHTTPMiddleware(t *testing.T) {
 
 	t.Run("MooreAccess", func(t *testing.T) {
 		bondToken := getAccessToken(t, signKey, signKeyId, navigaid.Claims{
-			StandardClaims: jwt.StandardClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
 				Subject:   "hms-govt://agent/007/roger-moore",
-				ExpiresAt: time.Date(1985, time.May, 23, 0, 0, 0, 0, time.UTC).Unix(),
+				ExpiresAt: &jwt.NumericDate{Time: time.Date(1985, time.May, 23, 0, 0, 0, 0, time.UTC)},
 			},
 			Org: "hms-govt",
 			Permissions: navigaid.PermissionsClaim{
