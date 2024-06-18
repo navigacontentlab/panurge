@@ -1,6 +1,6 @@
 package navigaid
 
-import "github.com/golang-jwt/jwt/v4"
+import "github.com/golang-jwt/jwt/v5"
 
 // Known token types
 const (
@@ -87,13 +87,4 @@ func (p PermissionsClaim) PermissionsInUnit(unit string) map[string]bool {
 	}
 
 	return m
-}
-
-func (c Claims) Valid() error {
-	err := c.RegisteredClaims.Valid()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

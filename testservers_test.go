@@ -13,7 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-xray-sdk-go/strategy/sampling"
 	"github.com/aws/aws-xray-sdk-go/xray"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/navigacontentlab/panurge"
 	"github.com/navigacontentlab/panurge/internal/rpc/testservice"
 	"github.com/navigacontentlab/panurge/navigaid"
