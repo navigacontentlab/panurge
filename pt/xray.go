@@ -13,7 +13,7 @@ func DisableXRay() {
 
 type xrayStrategy bool
 
-func (sample xrayStrategy) ShouldTrace(request *sampling.Request) *sampling.Decision {
+func (sample xrayStrategy) ShouldTrace(_ *sampling.Request) *sampling.Decision {
 	return &sampling.Decision{
 		Sample: bool(sample),
 	}

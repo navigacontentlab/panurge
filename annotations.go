@@ -92,6 +92,7 @@ type ContextAnnotations struct {
 func (a *ContextAnnotations) AddAnnotation(key string, value interface{}) {
 	if !a.standalone {
 		_ = a.segment.AddAnnotation(key, value)
+
 		return
 	}
 
@@ -107,6 +108,7 @@ func (a *ContextAnnotations) AddAnnotation(key string, value interface{}) {
 func (a *ContextAnnotations) AddMetadata(key string, value interface{}) {
 	if !a.standalone {
 		_ = a.segment.AddMetadata(key, value)
+
 		return
 	}
 

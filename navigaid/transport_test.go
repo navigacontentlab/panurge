@@ -34,6 +34,10 @@ func TestTransport(t *testing.T) {
 	}
 
 	res, err := client.Do(req.WithContext(ctx))
+	defer func() {
+		_ = res.Body.Close()
+	}()
+
 	if err != nil {
 		t.Fatalf("failed to perform test request: %v", err)
 	}

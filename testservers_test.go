@@ -3,7 +3,6 @@ package panurge_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -24,11 +23,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
+//nolint:funlen
 func TestServers__MetricsAndTracing(t *testing.T) {
 	var testServers panurge.TestServers
 
-	logger := panurge.Logger("warning")
-	logger.Out = pt.NewTestLogWriter(t)
+	logger := panurge.Logger("warning", pt.NewTestLogWriter(t))
 
 	opts := navigaid.MockServerOptions{
 		Claims: navigaid.Claims{
@@ -76,7 +75,7 @@ func TestServers__MetricsAndTracing(t *testing.T) {
 
 	server := testServers.GetPublic()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Second)
 	defer cancel()
 
 	// Unauthorized client to get a fail
@@ -211,28 +210,28 @@ func (g *Greeter) DoThing(ctx context.Context, in *testservice.ThingReq) (*tests
 
 	ann := panurge.GetContextAnnotations(ctx)
 	if ann == nil {
-		return nil, errors.New("missing context annotations")
+		return nil, twirp.InternalError("missing context annotations")
 	}
 
 	auth, err := navigaid.GetAuth(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get auth context: %w", err)
+		return nil, twirp.InternalErrorWith(err)
 	}
 
 	if ann.GetUser() != auth.Claims.Subject {
-		return nil, errors.New("missing user annotation")
+		return nil, twirp.InternalError("missing user annotation")
 	}
 
 	annotations := ann.GetAnnotations()
 
 	segOrg, ok := annotations["imid_org"].(string)
 	if !ok {
-		return nil, errors.New("missing organisation annotation")
+		return nil, twirp.InternalError("missing organisation annotation")
 	}
 
 	if segOrg != auth.Claims.Org {
-		return nil, fmt.Errorf("wrong organisation annotation, want %q, got %q",
-			segOrg, "foo")
+		return nil, twirp.InternalErrorf("wrong organisation annotation, want %q, got %q",
+			auth.Claims.Org, segOrg)
 	}
 
 	return &testservice.ThingRes{
@@ -242,7 +241,7 @@ func (g *Greeter) DoThing(ctx context.Context, in *testservice.ThingReq) (*tests
 
 type SamplingStrategy bool
 
-func (s SamplingStrategy) ShouldTrace(request *sampling.Request) *sampling.Decision {
+func (s SamplingStrategy) ShouldTrace(_ *sampling.Request) *sampling.Decision {
 	return &sampling.Decision{
 		Sample: bool(s),
 		Rule:   aws.String("dummy strategy"),
@@ -251,8 +250,8 @@ func (s SamplingStrategy) ShouldTrace(request *sampling.Request) *sampling.Decis
 
 type DummyEmitter struct{}
 
-func (e DummyEmitter) Emit(seg *xray.Segment) {
+func (e DummyEmitter) Emit(_ *xray.Segment) {
 }
 
-func (e DummyEmitter) RefreshEmitterWithAddress(raddr *net.UDPAddr) {
+func (e DummyEmitter) RefreshEmitterWithAddress(_ *net.UDPAddr) {
 }

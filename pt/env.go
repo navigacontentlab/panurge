@@ -23,6 +23,7 @@ func (te *TestEnv) init() {
 	te.initOnce.Do(func() {
 		te.replaced = make(map[string]string)
 		te.unset = make(map[string]bool)
+
 		envLock.Lock()
 	})
 }
@@ -49,6 +50,7 @@ func (te *TestEnv) Set(name, value string) {
 			te.unset[name] = true
 		}
 	}
+
 	os.Setenv(name, value)
 }
 

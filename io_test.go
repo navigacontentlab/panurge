@@ -31,6 +31,7 @@ func Test_SafeFailingClose__SetsErr(t *testing.T) {
 func Test_SafeFailingClose__LogsErr(t *testing.T) {
 	tc := testCloser{Err: testDummyErr("close error")}
 	opErr := testDummyErr("op failure")
+
 	var lc testLogCapture
 
 	err := testCloserHandler(&lc, tc, opErr)
@@ -61,6 +62,7 @@ func Test_SafeFailingClose__LogsErr(t *testing.T) {
 
 func Test_SafeFailingClose__NoopOnNoErr(t *testing.T) {
 	var tc testCloser
+
 	var lc testLogCapture
 
 	err := testCloserHandler(&lc, tc, nil)

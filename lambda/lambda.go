@@ -5,12 +5,12 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/sirupsen/logrus"
 )
 
 type RequestContext struct {
@@ -18,11 +18,11 @@ type RequestContext struct {
 	events.APIGatewayV2HTTPRequestContext
 }
 
-// LambdaRequest wraps ALBTargetGroupRequest and APIGatewayV2HTTPRequest
-// into a generic request struct
-type LambdaRequest struct {
-	events.ALBTargetGroupRequest   //nolint // ambiguous selectors declared below
-	events.APIGatewayV2HTTPRequest //nolint // ambiguous selectors declared below
+// Request wraps ALBTargetGroupRequest and APIGatewayV2HTTPRequest
+// into a generic request struct.
+type Request struct {
+	events.ALBTargetGroupRequest
+	events.APIGatewayV2HTTPRequest //nolint:govet
 
 	// Added to resolve "ambiguous selectors" error
 	Headers               map[string]string `json:"headers"`
@@ -32,9 +32,9 @@ type LambdaRequest struct {
 	IsBase64Encoded       bool              `json:"isBase64Encoded"`
 }
 
-// LambdaRequest mimics ALBTargetGroupResponse and APIGatewayV2HTTPResponse
-// into a generic response struct
-type LambdaResponse struct {
+// Request mimics ALBTargetGroupResponse and APIGatewayV2HTTPResponse
+// into a generic response struct.
+type Response struct {
 	StatusCode        int                 `json:"statusCode"`
 	Headers           map[string]string   `json:"headers"`
 	MultiValueHeaders map[string][]string `json:"multiValueHeaders"`
@@ -43,26 +43,33 @@ type LambdaResponse struct {
 	Cookies           []string            `json:"cookies"`
 }
 
-// LambdaHandlerFunc is a generic LambdaHandlerFunc for incoming http requests/events
-// incoming request will be run through http server which will return the response
-type LambdaHandlerFunc func(
-	ctx context.Context, event LambdaRequest,
-) (LambdaResponse, error)
+// HandlerFunc is a generic HandlerFunc for incoming http requests/events
+// incoming request will be run through http server which will return the response.
+type HandlerFunc func(
+	ctx context.Context, event Request,
+) (Response, error)
 
-func LambdaHandler(handler http.Handler, logger *logrus.Logger) LambdaHandlerFunc {
-	return func(ctx context.Context, event LambdaRequest) (LambdaResponse, error) {
+func Handler(handler http.Handler, logger *slog.Logger) HandlerFunc {
+	return func(ctx context.Context, event Request) (Response, error) {
 		req, err := AWSRequestToHTTPRequest(ctx, event)
 
-		logger.WithFields(logrus.Fields{
-			"Method":  req.Method,
-			"host":    req.Host,
-			"URI":     req.RequestURI,
-			"Headers": req.Header,
-		}).Debug("GeneratedHTTPRequest")
+		var attr []slog.Attr
+		attr = append(attr, slog.String("Method", req.Method))
+		attr = append(attr, slog.String("host", req.Host))
+		attr = append(attr, slog.String("URI", req.RequestURI))
+		attr = append(attr, slog.Any("Headers", req.Header))
+
+		args := make([]any, 0, len(attr)*2)
+		for _, a := range attr {
+			args = append(args, a.Key, a.Value.Any())
+		}
+
+		logger.Debug("GeneratedHTTPRequest", args...)
 
 		if err != nil {
-			logger.WithError(err).Error("failed to convert event to request")
-			return LambdaResponse{}, fmt.Errorf(
+			logger.Error(fmt.Sprintf("failed to convert event to request. %v", err))
+
+			return Response{}, fmt.Errorf(
 				"failed to convert event to a request: %w", err)
 		}
 
@@ -74,7 +81,7 @@ func LambdaHandler(handler http.Handler, logger *logrus.Logger) LambdaHandlerFun
 	}
 }
 
-func AWSRequestToHTTPRequest(ctx context.Context, event LambdaRequest) (*http.Request, error) {
+func AWSRequestToHTTPRequest(ctx context.Context, event Request) (*http.Request, error) {
 	HTTPMethod := event.HTTPMethod
 	if event.Version == "2.0" {
 		HTTPMethod = event.RequestContext.HTTP.Method
@@ -84,6 +91,7 @@ func AWSRequestToHTTPRequest(ctx context.Context, event LambdaRequest) (*http.Re
 	for k, v := range event.QueryStringParameters {
 		params.Set(k, v)
 	}
+
 	for k, vals := range event.MultiValueQueryStringParameters {
 		for _, v := range vals {
 			params.Add(k, v)
@@ -94,6 +102,7 @@ func AWSRequestToHTTPRequest(ctx context.Context, event LambdaRequest) (*http.Re
 	for k, v := range event.Headers {
 		headers.Set(k, v)
 	}
+
 	for k, vals := range event.MultiValueHeaders {
 		for _, v := range vals {
 			headers.Add(k, v)
@@ -112,8 +121,9 @@ func AWSRequestToHTTPRequest(ctx context.Context, event LambdaRequest) (*http.Re
 
 	p, err := url.PathUnescape(u.RawPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
+
 	u.Path = p
 
 	if u.Path == u.RawPath {

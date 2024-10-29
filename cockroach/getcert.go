@@ -13,9 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ssm"
-
-	// Postgres driver
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" //nolint:nolintlint
 )
 
 const (
@@ -85,6 +83,7 @@ func NewConnectionConfig(
 			return nil, fmt.Errorf(
 				"failed to set up AWS SDK session: %w", err)
 		}
+
 		ssmSvc = ssm.New(sess)
 	}
 
@@ -122,6 +121,7 @@ func (cc *ConnectionConfig) DatabaseURL(database string) string {
 	dbValues := make(url.Values)
 
 	dbValues.Set("connect_timeout", "5")
+
 	for k, v := range cc.dbParams {
 		dbValues[k] = v
 	}
@@ -162,13 +162,16 @@ func fetch(
 		Name:           &paramName,
 		WithDecryption: aws.Bool(true),
 	})
+
 	if err != nil {
 		return nil, fmt.Errorf(
 			"failed to fetch certificate: %w", err)
 	}
 
 	var response Credentials
+
 	value := []byte(*res.Parameter.Value)
+
 	if err := json.Unmarshal(value, &response); err != nil {
 		return nil, fmt.Errorf(
 			"failed to parse stored credentials: %w", err)

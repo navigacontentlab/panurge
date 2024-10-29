@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"unicode/utf8"
 )
@@ -12,7 +13,7 @@ const defaultStatusCode = -1
 const contentTypeHeaderKey = "Content-Type"
 
 // ProxyResponseWriter implements http.ResponseWriter and adds the method
-// necessary to return an events.ALBTargetGroupResponse object
+// necessary to return an events.ALBTargetGroupResponse object.
 type ProxyResponseWriter struct {
 	headers   http.Header
 	body      bytes.Buffer
@@ -22,14 +23,13 @@ type ProxyResponseWriter struct {
 
 // NewProxyResponseWriter returns a new ProxyResponseWriter object.
 // The object is initialized with an empty map of headers and a
-// status code of -1
+// status code of -1.
 func NewProxyResponseWriter() *ProxyResponseWriter {
 	return &ProxyResponseWriter{
 		headers:   make(http.Header),
 		status:    defaultStatusCode,
 		observers: make([]chan<- bool, 0),
 	}
-
 }
 
 func (r *ProxyResponseWriter) CloseNotify() <-chan bool {
@@ -67,7 +67,12 @@ func (r *ProxyResponseWriter) Write(body []byte) (int, error) {
 		r.Header().Add(contentTypeHeaderKey, http.DetectContentType(body))
 	}
 
-	return (&r.body).Write(body)
+	n, err := (&r.body).Write(body)
+	if err != nil {
+		return n, fmt.Errorf("%w", err)
+	}
+
+	return n, nil
 }
 
 // WriteHeader sets a status code for the response. This method is used
@@ -77,17 +82,18 @@ func (r *ProxyResponseWriter) WriteHeader(status int) {
 }
 
 // GetLambdaResponse converts the data passed to the response writer into
-// an LambdaResponse object.
+// an Response object.
 // Returns a populated lambda response object. If the response is invalid, for example
 // has no headers or an invalid status code returns an error.
-func (r *ProxyResponseWriter) GetLambdaResponse() (LambdaResponse, error) {
+func (r *ProxyResponseWriter) GetLambdaResponse() (Response, error) {
 	r.notifyClosed()
 
 	if r.status == defaultStatusCode {
-		return LambdaResponse{}, errors.New("status code not set on response")
+		return Response{}, errors.New("status code not set on response")
 	}
 
 	var output string
+
 	isBase64 := false
 
 	bb := (&r.body).Bytes()
@@ -100,17 +106,17 @@ func (r *ProxyResponseWriter) GetLambdaResponse() (LambdaResponse, error) {
 	}
 
 	headers := map[string]string{}
-	for key, values := range http.Header(r.headers) {
+	for key, values := range r.headers {
 		// Only single value headers in "Headers"
 		if len(values) == 1 {
 			headers[key] = values[0]
 		}
 	}
 
-	return LambdaResponse{
+	return Response{
 		StatusCode:        r.status,
 		Headers:           headers,
-		MultiValueHeaders: http.Header(r.headers),
+		MultiValueHeaders: r.headers,
 		Body:              output,
 		IsBase64Encoded:   isBase64,
 		Cookies:           []string{},

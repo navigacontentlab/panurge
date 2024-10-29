@@ -1,8 +1,12 @@
 package navigaid
 
-import "github.com/golang-jwt/jwt/v4"
+import (
+	"fmt"
 
-// Known token types
+	"github.com/golang-jwt/jwt/v4"
+)
+
+// Known token types.
 const (
 	TokenTypeAccessToken = "access_token"
 	TokenTypeIDToken     = "id_token"
@@ -48,10 +52,10 @@ func (c Claims) HasPermissionsInOrganisation(permissions ...string) bool {
 	return true
 }
 
-// Userinfo contains name and similar data
+// Userinfo contains name and similar data.
 type Userinfo struct {
-	GivenName  string `json:"given_name"`
-	FamilyName string `json:"family_name"`
+	GivenName  string `json:"given_name"`  //nolint:tagliatelle
+	FamilyName string `json:"family_name"` //nolint:tagliatelle
 	Email      string `json:"email"`
 	Picture    string `json:"picture"`
 }
@@ -92,7 +96,7 @@ func (p PermissionsClaim) PermissionsInUnit(unit string) map[string]bool {
 func (c Claims) Valid() error {
 	err := c.RegisteredClaims.Valid()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
 
 	return nil

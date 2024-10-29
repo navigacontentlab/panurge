@@ -25,6 +25,7 @@ type Transport struct {
 // access token from Transport's Source.
 func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	reqBodyClosed := false
+
 	if req.Body != nil {
 		defer func() {
 			if !reqBodyClosed {
@@ -43,13 +44,20 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// req.Body is assumed to be closed by the base RoundTripper.
 	reqBodyClosed = true
-	return t.base().RoundTrip(req2)
+
+	trip, err := t.base().RoundTrip(req2)
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
+	}
+
+	return trip, nil
 }
 
 func (t *Transport) base() http.RoundTripper {
 	if t.Base != nil {
 		return t.Base
 	}
+
 	return http.DefaultTransport
 }
 
@@ -64,5 +72,6 @@ func cloneRequest(r *http.Request) *http.Request {
 	for k, s := range r.Header {
 		r2.Header[k] = append([]string(nil), s...)
 	}
+
 	return r2
 }
