@@ -4,20 +4,36 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/navigacontentlab/panurge"
-	"github.com/navigacontentlab/panurge/pt"
+	panurge "github.com/navigacontentlab/panurge/v2"
+	"github.com/navigacontentlab/panurge/v2/pt"
 )
+
+// testBuffer är en wrapper runt bytes.Buffer som implementerar io.Writer.
+type testBuffer struct {
+	buf bytes.Buffer
+}
+
+func (b *testBuffer) Write(p []byte) (n int, err error) {
+	write, err := b.buf.Write(p)
+
+	if err != nil {
+		return write, fmt.Errorf("%w", err)
+	}
+
+	return write, nil
+}
 
 type logOutput struct {
 	TestName    string                 `json:"-"`
-	TraceID     string                 `json:"trace_id"`
+	TraceID     string                 `json:"trace_id"` //nolint:tagliatelle
 	Segment     string                 `json:"segment"`
 	Annotations map[string]interface{} `json:"annotations"`
 	Metadata    map[string]interface{} `json:"metadata"`
@@ -44,9 +60,10 @@ func verifyLogEntries(t *testing.T, dummy bool) {
 	})
 	pt.Must(t, err, "failed to disable the centralised XRay sampling strategy")
 
-	var buf bytes.Buffer
-	logger := panurge.Logger("info")
-	logger.Out = &buf
+	// Skapa en buffer för att fånga loggar
+	buf := &testBuffer{}
+
+	logger := panurge.Logger(slog.LevelInfo.String(), buf)
 
 	ctx, seg := xray.BeginSegment(context.Background(), "testSeg")
 	seg.Dummy = dummy
@@ -54,25 +71,23 @@ func verifyLogEntries(t *testing.T, dummy bool) {
 
 	panurge.AddUserAnnotation(ctx, "some-individual")
 
-	logger.WithContext(ctx).Info("when it all began")
+	logger.InfoContext(ctx, "when it all began")
 
 	panurge.AddAnnotation(ctx, "document", "abc123")
 	panurge.AddMetadata(ctx, "data", "BIG HONKING VALUE")
 
-	// Do some work in a child context. The XRay segment is
-	// shared/inherited so logging will include XRay information
-	// as long as the context is preserved.
+	// Do some work in a child context
 	func(ctx context.Context) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
 		panurge.AddAnnotation(ctx, "relevantInfo", "Stig was here 1994")
-
-		// Do stuff
 	}(ctx)
 
-	logger.WithContext(ctx).Info("thing was done")
-	logger.WithContext(ctx).WithError(errors.New("nicely jobs everyone")).Error("but then the shit hit the fan")
+	logger.InfoContext(ctx, "thing was done")
+	logger.ErrorContext(ctx, "but then the shit hit the fan",
+		"error", "nicely jobs everyone",
+	)
 	logger.Warn("I know nothing")
 
 	wantEntries := []logOutput{
@@ -114,12 +129,12 @@ func verifyLogEntries(t *testing.T, dummy bool) {
 		},
 		{
 			TestName: "Nothing",
-			Level:    "warning",
+			Level:    "warn",
 			Msg:      "I know nothing",
 		},
 	}
 
-	dec := json.NewDecoder(&buf)
+	dec := json.NewDecoder(&buf.buf)
 
 	for i := range wantEntries {
 		want := wantEntries[i]
@@ -129,7 +144,7 @@ func verifyLogEntries(t *testing.T, dummy bool) {
 
 			err := dec.Decode(&got)
 			if err != nil {
-				t.Fatalf("failed to decode log output")
+				t.Fatalf("failed to decode log output: %v", err)
 			}
 
 			if got.Time.IsZero() {
@@ -147,7 +162,6 @@ func verifyLogEntries(t *testing.T, dummy bool) {
 			if diff := cmp.Diff(want, got, opts); diff != "" {
 				t.Errorf("logger output mismatch (-want +got):\n%s", diff)
 			}
-
 		})
 	}
 }

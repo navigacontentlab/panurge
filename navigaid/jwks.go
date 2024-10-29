@@ -8,12 +8,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
 	"math/big"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/golang-jwt/jwt/v4"
 )
 
 const defaultJwksTTL = 10 * time.Minute
@@ -38,7 +39,7 @@ type JWKS struct {
 // JWKSOption is a function that controls the JWKS configuration.
 type JWKSOption func(j *JWKS)
 
-// WithJwksTTL can be used to change the default JWKS refresh rate
+// WithJwksTTL can be used to change the default JWKS refresh rate.
 func WithJwksTTL(ttl time.Duration) JWKSOption {
 	return func(j *JWKS) {
 		j.ttl = ttl
@@ -79,8 +80,9 @@ func (j *JWKS) fetchJWKS() (*jwksResponse, error) {
 
 	res, err := j.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
+
 	defer func() {
 		_ = res.Body.Close()
 	}()
@@ -90,6 +92,7 @@ func (j *JWKS) fetchJWKS() (*jwksResponse, error) {
 	}
 
 	dec := json.NewDecoder(res.Body)
+
 	var jwks jwksResponse
 
 	err = dec.Decode(&jwks)
@@ -182,11 +185,12 @@ type jwksKey struct {
 func (j *jwksKey) nAsBigInt() (*big.Int, error) {
 	data, err := base64.RawURLEncoding.DecodeString(j.N)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	n := big.NewInt(0)
 	n.SetBytes(data)
+
 	return n, nil
 }
 
@@ -212,7 +216,7 @@ func (j *jwksKey) publicKey() (*rsa.PublicKey, error) {
 func (j *jwksKey) eAsInt() (int, error) {
 	data, err := base64.RawURLEncoding.DecodeString(j.E)
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("%w", err)
 	}
 
 	var ebytes []byte
@@ -223,12 +227,17 @@ func (j *jwksKey) eAsInt() (int, error) {
 	} else {
 		ebytes = data
 	}
+
 	reader := bytes.NewReader(ebytes)
+
 	var e uint64
 	err = binary.Read(reader, binary.BigEndian, &e)
+
 	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("%w", err)
 	}
+
+	//nolint:gosec
 	return int(e), nil
 }
 
@@ -239,5 +248,5 @@ type jwksKeyMetadata struct {
 type jwksResponse struct {
 	Keys         []jwksKey                  `json:"keys"`
 	KeysMetadata map[string]jwksKeyMetadata `json:"keysMeta"`
-	MaxTokenTTL  int                        `json:"maxTokenTTL"`
+	MaxTokenTTL  int                        `json:"maxTokenTTL"` //nolint:tagliatelle
 }

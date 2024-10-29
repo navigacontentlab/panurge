@@ -7,7 +7,7 @@ import (
 
 type contextKey int
 
-// authInfoKey is used to retrieve the access token
+// authInfoKey is used to retrieve the access token.
 const authInfoKey = contextKey(iota)
 
 type AuthInfo struct {
@@ -26,6 +26,7 @@ func GetAuth(ctx context.Context) (AuthInfo, error) {
 	if !ok {
 		return AuthInfo{}, errors.New("no authentication information in context")
 	}
+
 	if auth.Err != nil {
 		return AuthInfo{}, auth.Err
 	}
@@ -33,7 +34,7 @@ func GetAuth(ctx context.Context) (AuthInfo, error) {
 	return auth.Ac, nil
 }
 
-// SetClaims adds specified Claims to the context
+// SetClaims adds specified Claims to the context.
 func SetAuth(ctx context.Context, auth AuthInfo, err error) context.Context {
 	return context.WithValue(ctx, authInfoKey, ai{
 		Ac:  auth,

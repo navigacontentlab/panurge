@@ -18,6 +18,7 @@ func ExpectTwirpInvalidArgument(t *testing.T, err error, argument string) {
 	if te.Meta("argument") != argument {
 		t.Errorf("expected validation to fail for the argument %q, got %q",
 			argument, te.Meta("argument"))
+
 		return
 	}
 
@@ -26,22 +27,26 @@ func ExpectTwirpInvalidArgument(t *testing.T, err error, argument string) {
 	}
 }
 
+//nolint:ireturn
 func checkTwirpErrorCode(t *testing.T, err error, code twirp.ErrorCode) (twirp.Error, bool) {
 	t.Helper()
 
 	if err == nil {
 		t.Error("expected operation to fail")
+
 		return nil, false
 	}
 
 	var twErr twirp.Error
 	if !errors.As(err, &twErr) {
 		t.Error("expected a twirp.Error")
+
 		return nil, false
 	}
 
 	if twErr.Code() != code {
 		t.Errorf("expected twirp error code %q, got %q", code, twErr.Code())
+
 		return twErr, false
 	}
 

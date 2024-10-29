@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/navigacontentlab/panurge/navigaid"
+	"github.com/navigacontentlab/panurge/v2/navigaid"
 )
 
 const dummyPrivatePemKey string = `-----BEGIN PRIVATE KEY-----
@@ -63,11 +63,11 @@ CXRKknNFLhg+1JQQ98Oz0gRTNXUm4IEzx5hSZW7Md5ILmPfmdI4FrZrTZ34HmT+L
 z3YIPsJ7PD4BGnEaBg0eMq72qTrD
 -----END PRIVATE KEY-----`
 
-const dummyPrivatePemKeyId string = "test-dummy-key"
+const dummyPrivatePemKeyID string = "test-dummy-key"
 
 type Jwks struct {
 	Keys        []Jwk `json:"keys"`
-	MaxTokenTTL int   `json:"maxTokenTTL"`
+	MaxTokenTTL int   `json:"maxTokenTTL"` //nolint:tagliatelle
 }
 
 type Jwk struct {
@@ -80,9 +80,9 @@ type Jwk struct {
 }
 
 type TokenResp struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
+	AccessToken string `json:"access_token"` //nolint:tagliatelle
+	TokenType   string `json:"token_type"`   //nolint:tagliatelle
+	ExpiresIn   int    `json:"expires_in"`   //nolint:tagliatelle
 }
 
 func TestNavigaIdMockServiceWithCustomPrivateKey(t *testing.T) {
@@ -95,7 +95,7 @@ func TestNavigaIdMockServiceWithCustomPrivateKey(t *testing.T) {
 			Permissions: navigaid.PermissionsClaim{},
 		},
 		PrivatePemKey:   dummyPrivatePemKey,
-		PrivatePemKeyId: dummyPrivatePemKeyId,
+		PrivatePemKeyID: dummyPrivatePemKeyID,
 	}
 
 	mockServer, err := navigaid.NewMockServer(opts)
@@ -110,6 +110,10 @@ func TestNavigaIdMockServiceWithCustomPrivateKey(t *testing.T) {
 
 	t.Run("should use private key in /jwks", func(t *testing.T) {
 		resp, err := http.Get(server.URL + "/v1/jwks")
+
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		if err != nil {
 			t.Fatal(err)
@@ -128,13 +132,17 @@ func TestNavigaIdMockServiceWithCustomPrivateKey(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if jwks.Keys[0].Kid != dummyPrivatePemKeyId {
-			t.Fatalf("specified keyId (%s) was not found in /jwks response: %v", dummyPrivatePemKeyId, jwks)
+		if jwks.Keys[0].Kid != dummyPrivatePemKeyID {
+			t.Fatalf("specified keyId (%s) was not found in /jwks response: %v", dummyPrivatePemKeyID, jwks)
 		}
 	})
 
 	t.Run("should return token signed with private key", func(t *testing.T) {
 		resp, err := http.Get(server.URL + "/v1/token")
+
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		if err != nil {
 			t.Fatal(err)
@@ -170,5 +178,4 @@ func TestNavigaIdMockServiceWithCustomPrivateKey(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-
 }

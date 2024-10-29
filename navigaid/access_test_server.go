@@ -6,28 +6,29 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/golang-jwt/jwt/v4"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 )
 
 type MockServer struct {
 	Server       *httptest.Server
 	PrivateKey   *rsa.PrivateKey
-	PrivateKeyId string
+	PrivateKeyID string
 	Client       *http.Client
 }
 
 type MockServerOptions struct {
 	Claims          Claims
 	TTL             int    `json:"ttl"`
-	PrivatePemKey   string `json:"private_pem_key"`
-	PrivatePemKeyId string `json:"private_pem_key_id"`
+	PrivatePemKey   string `json:"private_pem_key"`    //nolint:tagliatelle
+	PrivatePemKeyID string `json:"private_pem_key_id"` //nolint:tagliatelle
 }
 
 type MockService struct {
@@ -54,7 +55,7 @@ func NewMockServer(opts MockServerOptions) (*MockServer, error) {
 		Server:       srv,
 		Client:       srv.Client(),
 		PrivateKey:   mockService.PrivateKey,
-		PrivateKeyId: mockService.keyID,
+		PrivateKeyID: mockService.keyID,
 	}
 
 	return &mockServer, nil
@@ -63,19 +64,20 @@ func NewMockServer(opts MockServerOptions) (*MockServer, error) {
 // This mock service mocks two endpoints, one for creating new access
 // tokens and another one for providing keys.
 func NewMockService(opts MockServerOptions) (MockService, error) {
-
 	var mockService MockService
 
 	mux := http.NewServeMux()
 
 	var privateKey *rsa.PrivateKey
-	var privateKeyId string
+
+	var privateKeyID string
+
 	var err error
 
 	if opts.PrivatePemKey != "" {
-		privateKey, privateKeyId, err = parsePrivatePemKeyFromOpts(opts)
+		privateKey, privateKeyID, err = parsePrivatePemKeyFromOpts(opts)
 	} else {
-		privateKey, privateKeyId, err = generatePrivateKey()
+		privateKey, privateKeyID, err = generatePrivateKey()
 	}
 
 	if err != nil {
@@ -87,6 +89,12 @@ func NewMockService(opts MockServerOptions) (MockService, error) {
 
 		if val := r.URL.Query().Get("ttl"); val != "" {
 			if queryTTL, err := strconv.ParseUint(val, 0, 0); err == nil {
+				if queryTTL > math.MaxInt {
+					_, _ = w.Write([]byte(fmt.Sprintf("value %d exceeds maximum integer size", queryTTL)))
+
+					return
+				}
+
 				tokenTTL = time.Duration(queryTTL) * time.Second
 			}
 		} else if opts.TTL != 0 {
@@ -112,12 +120,13 @@ func NewMockService(opts MockServerOptions) (MockService, error) {
 
 		token := jwt.NewWithClaims(jwt.SigningMethodRS512, jwtClaims)
 
-		token.Header["kid"] = privateKeyId
+		token.Header["kid"] = privateKeyID
 
 		signed, err := token.SignedString(privateKey)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(fmt.Sprintf("failed to sign access token: %v", err.Error())))
+
 			return
 		}
 
@@ -138,7 +147,7 @@ func NewMockService(opts MockServerOptions) (MockService, error) {
 		}
 	})
 
-	mux.HandleFunc("/v1/jwks", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/jwks", func(w http.ResponseWriter, _ *http.Request) {
 		n := base64.RawURLEncoding.EncodeToString(privateKey.PublicKey.N.Bytes())
 
 		keys := fmt.Sprintf(`{
@@ -152,7 +161,7 @@ func NewMockService(opts MockServerOptions) (MockService, error) {
 					"e": "AQAB"
 				}],
 				"maxTokenTTL": 604800
-		}`, privateKeyId, n)
+		}`, privateKeyID, n)
 
 		_, err = io.WriteString(w, keys)
 		if err != nil {
@@ -162,21 +171,25 @@ func NewMockService(opts MockServerOptions) (MockService, error) {
 
 	mockService.Mux = mux
 	mockService.PrivateKey = privateKey
-	mockService.keyID = privateKeyId
+	mockService.keyID = privateKeyID
 
 	return mockService, nil
 }
 
 func updateClaimsWithHeaderSpecifiedClaims(req *http.Request, jwtClaims jwt.MapClaims) error {
 	rawClaims := req.Header.Get("X-NAVIGA-ID-MOCK-CLAIMS")
+
 	var claims map[string]string
 	err := json.Unmarshal([]byte(rawClaims), &claims)
+
 	if err != nil {
-		return err
+		return fmt.Errorf("%w", err)
 	}
+
 	for k, v := range claims {
 		jwtClaims[k] = v
 	}
+
 	return nil
 }
 
@@ -188,24 +201,23 @@ func parsePrivatePemKeyFromOpts(opts MockServerOptions) (*rsa.PrivateKey, string
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM([]byte(opts.PrivatePemKey))
 
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("%w", err)
 	}
 
-	return privateKey, opts.PrivatePemKeyId, nil
+	return privateKey, opts.PrivatePemKeyID, nil
 }
 
 func generatePrivateKey() (*rsa.PrivateKey, string, error) {
 	generatedPrivateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("%w", err)
 	}
 
-	generatedPrivateKeyUuid, err := uuid.NewUUID()
+	generatedPrivateKeyUUID, err := uuid.NewUUID()
 
 	if err != nil {
-		return nil, "", err
+		return nil, "", fmt.Errorf("%w", err)
 	}
 
-	return generatedPrivateKey, generatedPrivateKeyUuid.String(), err
-
+	return generatedPrivateKey, generatedPrivateKeyUUID.String(), err
 }

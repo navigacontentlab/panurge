@@ -2,9 +2,9 @@ package navigaid
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
 	"github.com/twitchtv/twirp"
 )
 
@@ -27,6 +27,7 @@ func HTTPMiddleware(jwks *JWKS, next http.Handler, annotate AnnotationFunc) http
 		if err != nil {
 			ctx = SetAuth(ctx, AuthInfo{}, err)
 			next.ServeHTTP(w, r.WithContext(ctx))
+
 			return
 		}
 
@@ -34,6 +35,7 @@ func HTTPMiddleware(jwks *JWKS, next http.Handler, annotate AnnotationFunc) http
 		if err != nil {
 			ctx = SetAuth(ctx, AuthInfo{}, err)
 			next.ServeHTTP(w, r.WithContext(ctx))
+
 			return
 		}
 
@@ -50,7 +52,7 @@ func HTTPMiddleware(jwks *JWKS, next http.Handler, annotate AnnotationFunc) http
 // NewTwirpAuthHook creates a twirp server hook that requires a valid
 // NavigaID access token and adds the authentication result to the
 // request context.
-func NewTwirpAuthHook(log *logrus.Logger, jwks *JWKS, annotate AnnotationFunc) *twirp.ServerHooks {
+func NewTwirpAuthHook(_ *slog.Logger, jwks *JWKS, annotate AnnotationFunc) *twirp.ServerHooks {
 	var hooks twirp.ServerHooks
 
 	hooks.RequestRouted = func(ctx context.Context) (context.Context, error) {

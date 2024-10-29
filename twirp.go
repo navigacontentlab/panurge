@@ -3,15 +3,15 @@ package panurge
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"time"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
-	"github.com/navigacontentlab/panurge/lambda"
-	"github.com/navigacontentlab/panurge/navigaid"
+	"github.com/navigacontentlab/panurge/v2/lambda"
+	"github.com/navigacontentlab/panurge/v2/navigaid"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 	"github.com/twitchtv/twirp"
 	"golang.org/x/sync/errgroup"
 )
@@ -31,7 +31,7 @@ type StandardApp struct {
 	cors         CORSOptions
 	testServers  *TestServers
 	metricsOpts  []TwirpMetricOptionFunc
-	logger       *logrus.Logger
+	logger       *slog.Logger
 
 	internalServer *http.Server
 
@@ -77,7 +77,7 @@ func WithAppHealthCheck(check HealthcheckFunc) StandardAppOption {
 	}
 }
 
-// WithAppPorts sets the public and internal listener ports
+// WithAppPorts sets the public and internal listener ports.
 func WithAppPorts(public, internal int) StandardAppOption {
 	return func(app *StandardApp) {
 		app.port = public
@@ -109,7 +109,7 @@ func WithTwirpMetricsOptions(opts ...TwirpMetricOptionFunc) StandardAppOption {
 
 // NewStandardApp creates a standard panurge Twirp application.
 func NewStandardApp(
-	logger *logrus.Logger, name string, opts ...StandardAppOption,
+	logger *slog.Logger, name string, opts ...StandardAppOption,
 ) (*StandardApp, error) {
 	app := StandardApp{
 		healthcheck:  NoopHealthcheck,
@@ -184,13 +184,18 @@ func (app *StandardApp) ListenAndServe() error {
 	grp.Go(app.Server.ListenAndServe)
 	grp.Go(app.internalServer.ListenAndServe)
 
-	return grp.Wait()
+	err := grp.Wait()
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
 }
 
 // LambdaHandler creates an HTTP event handler (Loadbalancer/APIGateway) that proxies requests to the
 // application ServeMux.
-func (app *StandardApp) LambdaHandler() lambda.LambdaHandlerFunc {
-	return lambda.LambdaHandler(app.Server.Handler, app.logger)
+func (app *StandardApp) LambdaHandler() lambda.HandlerFunc {
+	return lambda.Handler(app.Server.Handler, app.logger)
 }
 
 // TwirpHookOptions controls the configuration of the standard twirp
@@ -204,7 +209,7 @@ type TwirpHookOptions struct {
 // StandardTwirpHooks sets up the standard twirp server hooks for
 // metrics, authentication, and error logging.
 func StandardTwirpHooks(
-	logger *logrus.Logger, opts TwirpHookOptions,
+	logger *slog.Logger, opts TwirpHookOptions,
 ) (*twirp.ServerHooks, error) {
 	var auth *twirp.ServerHooks
 
@@ -240,20 +245,24 @@ func StandardTwirpHooks(
 // NewErrorLoggingHooks will log outgoing error responses. XRay
 // annotations should be logged together with the error, so we do not
 // add information about the method and service here.
-func NewErrorLoggingHooks(logger *logrus.Logger) *twirp.ServerHooks {
+func NewErrorLoggingHooks(logger *slog.Logger) *twirp.ServerHooks {
 	return &twirp.ServerHooks{
 		Error: func(ctx context.Context, err twirp.Error) context.Context {
-			fields := logrus.Fields{
-				"status_code": twirp.ServerHTTPStatusFromErrorCode(err.Code()),
-				"twirp_code":  err.Code(),
-				"twirp_msg":   err.Msg(),
-			}
+			var attr []slog.Attr
+			attr = append(attr, slog.Int("status_code", twirp.ServerHTTPStatusFromErrorCode(err.Code())))
+			attr = append(attr, slog.Any("twirp_code", err.Code()))
+			attr = append(attr, slog.String("twirp_msg", err.Msg()))
 
 			if err.MetaMap() != nil {
-				fields["twirp_meta"] = err.MetaMap()
+				attr = append(attr, slog.Any("twirp_meta", err.MetaMap()))
 			}
 
-			logger.WithContext(ctx).WithFields(fields).Error("error response")
+			args := make([]any, 0, len(attr)*2)
+			for _, a := range attr {
+				args = append(args, a.Key, a.Value.Any())
+			}
+
+			logger.ErrorContext(ctx, "error response", args...)
 
 			return ctx
 		},
@@ -277,6 +286,10 @@ func CombineMetricsAndAuthHooks(metrics, auth *twirp.ServerHooks) *twirp.ServerH
 			if mCtx, mErr := metrics.RequestRouted(ctx); mErr != nil {
 				ctx = mCtx
 			}
+		}
+
+		if err != nil {
+			err = fmt.Errorf("%w", err)
 		}
 
 		return ctx, err
@@ -316,7 +329,7 @@ func WithTwirpMetricsStaticTestLatency(latency time.Duration) TwirpMetricOptionF
 	}
 }
 
-// NewTwirpMetricsHooks creates new twirp hooks enabling prometheus metrics
+// NewTwirpMetricsHooks creates new twirp hooks enabling prometheus metrics.
 func NewTwirpMetricsHooks(opts ...TwirpMetricOptionFunc) (*twirp.ServerHooks, error) {
 	opt := TwirpMetricsOptions{
 		reg: prometheus.DefaultRegisterer,
@@ -376,6 +389,7 @@ func NewTwirpMetricsHooks(opts ...TwirpMetricOptionFunc) (*twirp.ServerHooks, er
 	hooks.ResponseSent = func(ctx context.Context) {
 		serviceName, sOk := twirp.ServiceName(ctx)
 		method, mOk := twirp.MethodName(ctx)
+
 		if !mOk || !sOk {
 			return
 		}
@@ -403,6 +417,7 @@ func NewTwirpMetricsHooks(opts ...TwirpMetricOptionFunc) (*twirp.ServerHooks, er
 	hooks.RequestRouted = func(ctx context.Context) (context.Context, error) {
 		serviceName, sOk := twirp.ServiceName(ctx)
 		method, mOk := twirp.MethodName(ctx)
+
 		if !(sOk && mOk) {
 			return ctx, nil
 		}

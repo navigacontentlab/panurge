@@ -27,6 +27,7 @@ func SafeFailingClose(logger ErrorLogger, outErr *error, name string, c io.Close
 	err := c.Close()
 	if err != nil && *outErr == nil {
 		*outErr = fmt.Errorf("failed to close %s: %w", name, err)
+
 		return
 	}
 

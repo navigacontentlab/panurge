@@ -4,17 +4,17 @@ import (
 	"context"
 	"expvar"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/pprof"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 )
 
 type HealthcheckFunc func(ctx context.Context) error
 
 func StandardInternalMux(
-	logger *logrus.Logger, test HealthcheckFunc,
+	logger *slog.Logger, test HealthcheckFunc,
 ) *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -40,17 +40,18 @@ func StandardInternalMux(
 }
 
 func HealthcheckHandler(
-	logger *logrus.Logger, test HealthcheckFunc,
+	logger *slog.Logger, test HealthcheckFunc,
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 
 		err := test(r.Context())
 		if err != nil {
-			logger.WithError(err).Error("healthcheck failed")
+			logger.Error(fmt.Sprintf("healthcheck failed. %v", err))
 
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprintln(w, `{"status": "fail"}`)
+
 			return
 		}
 
@@ -58,6 +59,6 @@ func HealthcheckHandler(
 	})
 }
 
-func NoopHealthcheck(ctx context.Context) error {
+func NoopHealthcheck(_ context.Context) error {
 	return nil
 }

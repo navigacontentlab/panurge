@@ -50,33 +50,39 @@ func New(tokenEndpoint string, options ...AccessTokenServiceOption) *AccessToken
 
 // AccessTokenResponse is the response retrieved from navigaID.
 type AccessTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
+	AccessToken string `json:"access_token"` //nolint:tagliatelle
+	TokenType   string `json:"token_type"`   //nolint:tagliatelle
+	ExpiresIn   int    `json:"expires_in"`   //nolint:tagliatelle
 }
 
 // NewAccessToken takes an navigaID token and returns an access token.
 func (ats *AccessTokenService) NewAccessToken(navigaIDToken string) (*AccessTokenResponse, error) {
 	req, err := http.NewRequest("POST", ats.tokenEndpoint, strings.NewReader(""))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	req.Header.Add("Authorization", "Bearer "+navigaIDToken)
 	res, err := ats.client.Do(req)
+
+	defer func() {
+		_ = res.Body.Close()
+	}()
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	bytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	var atr AccessTokenResponse
 	err = json.Unmarshal(bytes, &atr)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w", err)
 	}
 
 	return &atr, nil

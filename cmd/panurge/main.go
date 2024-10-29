@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/navigacontentlab/panurge/navigaid"
+	"github.com/navigacontentlab/panurge/v2/navigaid"
 	"github.com/urfave/cli/v2"
 )
 
@@ -14,7 +14,7 @@ func main() {
 	app := NewCLIApplication()
 
 	if err := app.Run(os.Args); err != nil {
-		println(err.Error())
+		fmt.Printf("%v", err.Error()) //nolint:forbidigo
 		os.Exit(1)
 	}
 }
@@ -74,5 +74,10 @@ func navigaIDMock(c *cli.Context) error {
 	server.Addr = addr
 	server.Handler = mockService
 
-	return server.ListenAndServe()
+	err = server.ListenAndServe()
+	if err != nil {
+		return fmt.Errorf("%w", err)
+	}
+
+	return nil
 }

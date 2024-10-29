@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/navigacontentlab/panurge/navigaid"
+	"github.com/navigacontentlab/panurge/v2/navigaid"
 )
 
 func TestTransport(t *testing.T) {
@@ -34,6 +34,10 @@ func TestTransport(t *testing.T) {
 	}
 
 	res, err := client.Do(req.WithContext(ctx))
+	defer func() {
+		_ = res.Body.Close()
+	}()
+
 	if err != nil {
 		t.Fatalf("failed to perform test request: %v", err)
 	}

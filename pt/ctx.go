@@ -9,6 +9,7 @@ func TestContext(t *testing.T) context.Context {
 	t.Helper()
 
 	var ctx context.Context
+
 	var cancel func()
 
 	if deadline, ok := t.Deadline(); ok {
