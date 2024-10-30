@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/dimelords/panurge/navigaid"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/navigacontentlab/panurge/navigaid"
 )
 
 const dummyPrivatePemKey string = `-----BEGIN PRIVATE KEY-----
