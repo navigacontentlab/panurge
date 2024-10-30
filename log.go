@@ -100,25 +100,17 @@ func (h *AnnotationHandler) WithGroup(name string) slog.Handler {
 	}
 }
 
-func Logger(rawLogLevel string, writer io.Writer) *slog.Logger {
+func Logger(logLevel string, writer io.Writer) *slog.Logger {
 	level := slog.LevelWarn
 
-	if rawLogLevel != "" {
-		switch strings.ToLower(rawLogLevel) {
-		case "debug":
-			level = slog.LevelDebug
-		case "info":
-			level = slog.LevelInfo
-		case "warn":
+	if logLevel != "" {
+		err := level.UnmarshalText([]byte(logLevel))
+		if err != nil {
 			level = slog.LevelWarn
-		case "warning":
-			level = slog.LevelWarn
-		case "error":
-			level = slog.LevelError
-		default:
+
 			slog.Error("invalid log level",
-				"raw_log_level", rawLogLevel,
-			)
+				"err", err,
+				"log_level", logLevel)
 		}
 	}
 
