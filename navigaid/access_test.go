@@ -23,9 +23,11 @@ func TestAccessTokenService(t *testing.T) {
 		TTL: expectedTokenTTL,
 	}
 	mockServer, err := navigaid.NewMockServer(opts)
+
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	t.Cleanup(mockServer.Server.Close)
 
 	service := navigaid.New(
@@ -52,26 +54,33 @@ func TestAccessTokenService(t *testing.T) {
 	var claims jwt.RegisteredClaims
 
 	_, _, err = new(jwt.Parser).ParseUnverified(resp.AccessToken, &claims)
+
 	if err != nil {
 		t.Errorf("failed to parse token")
 	}
-	fmt.Printf("claims: %v\n", claims)
+
+	fmt.Printf("claims: %v\n", claims) //nolint:forbidigo
 	actualTokenTTL := claims.ExpiresAt.Time.Sub(claims.IssuedAt.Time)
+
 	if actualTokenTTL.Seconds() != float64(expectedTokenTTL) {
 		t.Errorf("expected token TTL to be %f but got %f", float64(expectedTokenTTL), actualTokenTTL.Seconds())
 	}
 
 	if actualTokenTTL.Seconds() != float64(resp.ExpiresIn) {
-		t.Errorf("expected token TTL (%d) to match token response ExpiresIn (%d)", actualTokenTTL, resp.ExpiresIn)
+		t.Errorf("expected token TTL (%d) "+
+			"to match token response ExpiresIn (%d)", actualTokenTTL, resp.ExpiresIn)
 	}
 
 	if expectedTokenTTL != resp.ExpiresIn {
-		t.Errorf("expected configured token TTL (%d) to match token response ExpiresIn (%d)", expectedTokenTTL, resp.ExpiresIn)
+		t.Errorf("expected configured token TTL (%d) "+
+			"to match token response ExpiresIn (%d)", expectedTokenTTL, resp.ExpiresIn)
 	}
 
 	// Test validating an invalid access token
+	//nolint:gosec,lll
 	invalidToken := "eyJhbGciOiJSUzUxMiIsImtpZCI6ImEzNGRiODVhLTNmNjctNDJlMC05NGY2LTE3Njk0ZmM4NWZkOSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODYyNTAwNTAsImlhdCI6MTU4NjI0OTc1MCwianRpIjoiZGEyMGRkYTQtYzhjZS00ZGFjLTk4ZGMtNDM1ZjJmMDEyOGYxIiwibnR0IjoiYWNjZXNzX3Rva2VuIiwib3JnIjoic2FtcGxlb3JnIiwic3ViIjoiNzUyNTVhNjQtNThmOC00YjI1LWIxMDItYWYxMzA0NjQxMDk2In0.GHCuL6SU2T2_cZQMJhCPpYcqPQxascYgjgCIZQuUFinNSUeBegDKLWvkQMSu6huK8JPq7klftQ7CbK5Lc6jREQsgsXOoW6xmQO2xKUF04ugjWEKtgWZaCmx23uyNRy77B-S-pIpRbC5pDoyxORGqb5r19EnrXAbWNGtgRxYZqSBK6AO-9QFgaxthZDcJ9y5GMCAkFbGgc8PEPYiPKZ9C0MyIlAmth1NU6601w0SDfGsUkkbbOQF-F7wZYkuLspbgZuRqLNLBJPI8VNPfquZlUVhr1ZWq9lEvXhLlrVQbw6BsD7RmrmPJHqjMkmyClLyZv2pWa3Z9nXxVZBOctStkHg"
 	_, err = jwks.Validate(invalidToken)
+
 	if err == nil {
 		t.Errorf("expected token to be invalid but was valid")
 	}

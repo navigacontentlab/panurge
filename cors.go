@@ -58,11 +58,13 @@ func standardAllowOriginFunc(
 		if !allowHTTP && !strings.HasPrefix(origin, "https://") {
 			return false
 		}
+
 		for _, domain := range allowedDomains {
 			if strings.HasSuffix(origin, domain) {
 				return true
 			}
 		}
+
 		return false
 	}
 }
@@ -74,6 +76,7 @@ func anyOfAllowOriginFuncs(funcs ...func(string) bool) func(string) bool {
 				return true
 			}
 		}
+
 		return false
 	}
 }
