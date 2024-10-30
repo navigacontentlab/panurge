@@ -19,7 +19,6 @@ linters:
     - errcheck
     - errorlint
     - exhaustive
-    - exportloopref
     - forbidigo
     - funlen
     - gci
