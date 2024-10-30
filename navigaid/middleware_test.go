@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dimelords/panurge/navigaid"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/navigacontentlab/panurge/navigaid"
 )
 
 //nolint:funlen

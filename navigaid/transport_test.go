@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dimelords/panurge/navigaid"
+	"github.com/navigacontentlab/panurge/navigaid"
 )
 
 func TestTransport(t *testing.T) {

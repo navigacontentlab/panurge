@@ -27,7 +27,6 @@ func ExpectTwirpInvalidArgument(t *testing.T, err error, argument string) {
 	}
 }
 
-//nolint:ireturn
 func checkTwirpErrorCode(t *testing.T, err error, code twirp.ErrorCode) (twirp.Error, bool) {
 	t.Helper()
 

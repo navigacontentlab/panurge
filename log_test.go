@@ -10,10 +10,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
-	"github.com/dimelords/panurge"
-	"github.com/dimelords/panurge/pt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/navigacontentlab/panurge"
+	"github.com/navigacontentlab/panurge/pt"
 )
 
 // testBuffer är en wrapper runt bytes.Buffer som implementerar io.Writer.

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dimelords/panurge"
+	"github.com/navigacontentlab/panurge"
 )
 
 func Test_SafeFailingClose__SetsErr(t *testing.T) {

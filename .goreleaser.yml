@@ -31,6 +31,6 @@ brews:
       name: homebrew-core
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     folder: Formula
-    homepage: https://github.com/dimelords/panurge
+    homepage: https://github.com/navigacontentlab/panurge
     description: Panurge utility
-    url_template: "https://github.com/dimelords/panurge/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    url_template: "https://github.com/navigacontentlab/panurge/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
