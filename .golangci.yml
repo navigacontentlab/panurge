@@ -6,7 +6,6 @@ linters-settings:
     sections:
       - standard
       - default
-      - alias
   godox:
     keywords:
       - FIXME
