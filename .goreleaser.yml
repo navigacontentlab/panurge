@@ -31,7 +31,7 @@ brews:
       owner: Infomaker
       name: homebrew-core
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    folder: Formula
+    directory: Formula  # Ändrat från 'folder' till 'directory'
     homepage: https://github.com/navigacontentlab/panurge
     description: Panurge utility
     url_template: "https://github.com/navigacontentlab/panurge/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
