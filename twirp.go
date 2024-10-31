@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/aws/aws-xray-sdk-go/xray"
-	"github.com/navigacontentlab/panurge/lambda"
-	"github.com/navigacontentlab/panurge/navigaid"
+	"github.com/navigacontentlab/panurge/v2/lambda"
+	"github.com/navigacontentlab/panurge/v2/navigaid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/twitchtv/twirp"
 	"golang.org/x/sync/errgroup"

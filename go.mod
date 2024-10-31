@@ -1,4 +1,4 @@
-module github.com/navigacontentlab/panurge
+module github.com/navigacontentlab/panurge/v2
 
 go 1.21
 

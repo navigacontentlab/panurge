@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/navigacontentlab/panurge/navigaid"
+	"github.com/navigacontentlab/panurge/v2/navigaid"
 )
 
 //nolint:funlen

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/navigacontentlab/panurge/navigaid"
+	"github.com/navigacontentlab/panurge/v2/navigaid"
 	"github.com/urfave/cli/v2"
 )
 
