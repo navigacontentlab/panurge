@@ -27,7 +27,7 @@ changelog:
       - '^docs:'
       - '^test:'
 brews:
-  - tap:
+  - repository:
       owner: Infomaker
       name: homebrew-core
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
